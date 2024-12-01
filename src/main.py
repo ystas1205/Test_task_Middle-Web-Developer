@@ -1,10 +1,42 @@
-from fastapi import  FastAPI
 import uvicorn
 
 
-app = FastAPI()
+from fastapi_users import FastAPIUsers
+from fastapi import FastAPI
+
+from src.currency.router import router_currencies, router_currency
+from src.user.auth import auth_backend
+from src.user.manager import get_user_manager
+from src.user.models import User
+from src.user.shema import UserCreate, UserRead
 
 
+app = FastAPI(title="APIcorruncy")
+
+
+""" Роутер для currencies"""
+app.include_router(router_currencies)
+""" Роутер для currency"""
+app.include_router(router_currency)
+
+""" Настройки роутеров дял user """
+
+fastapi_users = FastAPIUsers[User, int](
+    get_user_manager,
+    [auth_backend],
+)
+
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
 
 
 if __name__ == "__main__":

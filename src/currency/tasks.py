@@ -4,7 +4,7 @@ from datetime import timedelta, datetime
 from celery import Celery
 from celery.schedules import crontab
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 
 from src.database import Session
 from src.models.models import Currency
@@ -24,6 +24,9 @@ async def run_main():
         root = ET.fromstring(response.content)
         # удаляем все старые записи из таблицы
         await session.execute(delete(Currency))
+        # Сброс последовательности идентификатора для таблицы Currency
+        await session.execute(text("ALTER SEQUENCE currency_id_seq RESTART WITH 1"))
+
         for valute in root.findall('.//Valute'):
             new_currency = Currency(name=valute.find('Name').text,
                                     rate=valute.find('Value').text)
@@ -49,3 +52,5 @@ celery_app.conf.beat_schedule = {
         'schedule': crontab(minute='*/1'),
     },
 }
+# Установка часового пояса на московский
+celery_app.conf.timezone = 'Europe/Moscow'  # Московский часовой пояс
