@@ -1,15 +1,13 @@
 import asyncio
-from datetime import timedelta, datetime
+import requests
+import xml.etree.ElementTree as ET
 
 from celery import Celery
 from celery.schedules import crontab
-
 from sqlalchemy import delete, text
 
 from src.database import Session
 from src.models.models import Currency
-import xml.etree.ElementTree as ET
-import requests
 
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 
@@ -25,7 +23,8 @@ async def run_main():
         # удаляем все старые записи из таблицы
         await session.execute(delete(Currency))
         # Сброс последовательности идентификатора для таблицы Currency
-        await session.execute(text("ALTER SEQUENCE currency_id_seq RESTART WITH 1"))
+        await session.execute(
+            text("ALTER SEQUENCE currency_id_seq RESTART WITH 1"))
 
         for valute in root.findall('.//Valute'):
             new_currency = Currency(name=valute.find('Name').text,

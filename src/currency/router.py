@@ -1,19 +1,20 @@
-from fastapi import Query
-from fastapi_users import FastAPIUsers
-from src.user.manager import get_user_manager
-from src.user.models import User
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession as As
-from src.database import get_async_session
-from src.models.models import Currency, History_Currency
-from sqlalchemy.exc import SQLAlchemyError
-from src.user.auth import auth_backend
 import requests
 import xml.etree.ElementTree as ET
-from sqlalchemy import delete, text
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_users import FastAPIUsers
+
+from sqlalchemy import delete, select, text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession as As
+
+from src.database import get_async_session
+from src.models.models import Currency, History_Currency
+from src.user.auth import auth_backend
+from src.user.manager import get_user_manager
+from src.user.models import User
 
 router_currencies = APIRouter(
     prefix="/api/currencies",

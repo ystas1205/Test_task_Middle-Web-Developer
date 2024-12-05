@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, MetaData, DateTime, func
-
 from sqlalchemy.orm import declarative_base
 
 metadata = MetaData()

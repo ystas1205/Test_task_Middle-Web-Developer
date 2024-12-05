@@ -1,10 +1,14 @@
 import uvicorn
 
-from fastapi_users import FastAPIUsers
 from fastapi import FastAPI
+from fastapi_users import FastAPIUsers
 
-from src.currency.router import router_currencies, router_currency, \
-    router_update, router_history
+from src.currency.router import (
+    router_currencies,
+    router_currency,
+    router_update,
+    router_history,
+)
 from src.user.auth import auth_backend
 from src.user.manager import get_user_manager
 from src.user.models import User
