@@ -4,7 +4,7 @@ from fastapi_users import FastAPIUsers
 from fastapi import FastAPI
 
 from src.currency.router import router_currencies, router_currency, \
-    router_update
+    router_update, router_history
 from src.user.auth import auth_backend
 from src.user.manager import get_user_manager
 from src.user.models import User
@@ -18,6 +18,8 @@ app.include_router(router_currencies)
 app.include_router(router_currency)
 """ Роутер для обновления currency"""
 app.include_router(router_update)
+"""Роутер для истории валюты"""
+app.include_router(router_history)
 
 """ Настройки роутеров дял user """
 

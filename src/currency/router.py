@@ -6,26 +6,34 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession as As
 from src.database import get_async_session
-from src.models.models import Currency
+from src.models.models import Currency, History_Currency
 from sqlalchemy.exc import SQLAlchemyError
 from src.user.auth import auth_backend
 import requests
 import xml.etree.ElementTree as ET
 from sqlalchemy import delete, text
+from typing import Optional
+from datetime import date
 
 router_currencies = APIRouter(
-    prefix="/currencies",
+    prefix="/api/currencies",
     tags=["Currencies"]
 )
 
 router_currency = APIRouter(
-    prefix="/currency",
+    prefix="/api/currency",
     tags=["Currency"]
 )
 
 router_update = APIRouter(
     prefix="/api/update",
     tags=["Update_currency"]
+)
+
+router_history = APIRouter(
+    prefix="/api/history",
+    tags=["History_currency"]
+
 )
 
 """ Зависимости для авторизации"""
@@ -80,6 +88,53 @@ async def history_of_exchange_rates(session: As = Depends(get_async_session)):
     for valute in root.findall('.//Valute'):
         new_currency = Currency(name=valute.find('Name').text,
                                 rate=valute.find('Value').text)
+        new_currency_history = History_Currency(name=valute.find('Name').text,
+                                                rate=valute.find('Value').text
+                                                )
+
         session.add(new_currency)
+        session.add(new_currency_history)
     await session.commit()
-    return {"Курсы валют обновлены"}
+    return {"message": "Курсы валют обновлены"}
+
+
+@router_history.get("/")
+async def current_exchange_rate_and_history(
+        currency_id: int,
+        start_date: Optional[date] = Query(None,
+                                           description="Дата начала фильтрации"),
+        end_date: Optional[date] = Query(None,
+                                         description="Дата окончания фильтрации"),
+        session: As = Depends(get_async_session)
+
+):
+    """ Получает текущий курс валюты и историю изменения курса через с фильтрацией по дате  """
+    try:
+        currency = await session.get(Currency, currency_id)
+        if not currency:
+            raise HTTPException(status_code=404, detail="Item not found")
+        query = select(History_Currency).filter(
+            History_Currency.name == currency.name)
+
+        # Добавляем фильтрацию по диапазону дат
+        if start_date and end_date:
+            query = query.filter(
+                History_Currency.date_of_creation.between(start_date,
+                                                          end_date))
+        elif start_date:
+            query = query.filter(
+                History_Currency.date_of_creation >= start_date)
+        elif end_date:
+            query = query.filter(History_Currency.date_of_creation <= end_date)
+
+        result = await session.execute(query)
+        history_currency = result.scalars().all()
+
+        return {
+            "currency": currency,
+            "history_currency": history_currency
+        }
+
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500,
+                            detail={"error": "Ошибка базы данных"})
