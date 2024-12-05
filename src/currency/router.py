@@ -9,7 +9,9 @@ from src.database import get_async_session
 from src.models.models import Currency
 from sqlalchemy.exc import SQLAlchemyError
 from src.user.auth import auth_backend
-
+import requests
+import xml.etree.ElementTree as ET
+from sqlalchemy import delete, text
 
 router_currencies = APIRouter(
     prefix="/currencies",
@@ -19,6 +21,11 @@ router_currencies = APIRouter(
 router_currency = APIRouter(
     prefix="/currency",
     tags=["Currency"]
+)
+
+router_update = APIRouter(
+    prefix="/api/update",
+    tags=["Update_currency"]
 )
 
 """ Зависимости для авторизации"""
@@ -56,3 +63,23 @@ async def get_currensy_by_id(currency_id: int,
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500,
                             detail={"error": "Ошибка базы данных"})
+
+
+@router_update.get("/")
+async def history_of_exchange_rates(session: As = Depends(get_async_session)):
+    """ Обноляет курс валют"""
+    url = 'https://www.cbr.ru/scripts/XML_daily.asp'
+    response = requests.get(url)
+    root = ET.fromstring(response.content)
+    # удаляем все старые записи из таблицы
+    await session.execute(delete(Currency))
+    # Сброс последовательности идентификатора для таблицы Currency
+    await session.execute(
+        text("ALTER SEQUENCE currency_id_seq RESTART WITH 1"))
+
+    for valute in root.findall('.//Valute'):
+        new_currency = Currency(name=valute.find('Name').text,
+                                rate=valute.find('Value').text)
+        session.add(new_currency)
+    await session.commit()
+    return {"Курсы валют обновлены"}
