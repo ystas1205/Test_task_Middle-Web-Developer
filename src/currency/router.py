@@ -100,7 +100,7 @@ async def history_of_exchange_rates(session: As = Depends(get_async_session)):
 
 @router_history.get("/")
 async def current_exchange_rate_and_history(
-        currency_id: int,
+        currency_id : int,
         start_date: Optional[date] = Query(None,
                                            description="Дата начала фильтрации"),
         end_date: Optional[date] = Query(None,

@@ -16,7 +16,7 @@ celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 
 async def run_main():
     """
-    Обновление базы данных в таблице currency данными по курсам валют раз в 4 часа.
+    Обновление базы данных в таблице currency данными по курсам валют раз в 30 минут.
     """
     async with Session() as session:
         url = 'https://www.cbr.ru/scripts/XML_daily.asp'
@@ -49,7 +49,7 @@ def main():
 celery_app.conf.beat_schedule = {
     'main': {
         'task': 'src.currency.tasks.main',
-        'schedule': crontab(minute='*/1'),
+        'schedule': crontab(minute='*/30'),
     },
 }
 # Установка часового пояса на московский
